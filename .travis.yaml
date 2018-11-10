@@ -1,0 +1,63 @@
+os: linux
+
+language: python
+
+python: "3.6"
+
+dist: trusty
+
+sudo: require
+
+addons:
+  apt:
+    update: true
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-6
+      - g++-6
+
+before_install:
+  - sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
+  - sudo ln -s /usr/bin/g++-6 /usr/local/bin/g++
+  - export CC=/usr/bin/gcc-6
+  - export CXX=/usr/bin/g++-6
+  - PY_PATH=$(which python3)
+  - export PATH=$PATH:PY_PATH
+  - python3 --version
+  - pip --version
+
+install:
+  - pip3 install -U numpy scipy Cython matplotlib tensorflow opencv-python vtk Pillow
+  - export PYTHONPATH=$(dirname `which python3`)/../lib/python3.6/site-packages/tensorflow:$PYTHONPATH
+
+before_script:
+  - cmake --version
+  - which python3
+  - echo $PYTHONPATH
+  - mkdir build
+  - cd build
+
+script:
+  - cmake .. -DBUILD_WITH_CUDA=OFF
+  - make
+
+before_deploy:
+  - pwd
+  - sudo find / -type f -iname "lmbspecialops.so"
+  - git config --local user.name HaiDang2001VN
+  - git config --local user.email danghailamhuynh@gmail.com
+  - git tag "$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)"
+
+deploy:
+  provider: releases
+  api_key:
+      secure: "Oqtp5/33UVDp9fyNePh308WotQ44ktLlUXQyKNotx3gi/RaXgxTSjHriEBV6omojKxi77KOy1tmeKUuk2wfPTE4wsrEJD9UFoOoeS1J8np7uR80dJfI1H8GFWxf7DSRiWC0YRlHnZDaY7VA6w+kxgKDU4o4gHJcYGbqbdQrwELd5/tAe38c8q3shi8Lzul1ERzTdURvYXaBfbpOpmvQaNujZqffIqXPxTvnnQQk2WKEZGDbmwPVwtcBWIuoIliYnAF1fg6WZJ0g4vM5lieggKeQ/bFZcvbWG8tWyZvN5wNBfZN2r4uox+dapws0C1bgqzhZfgv7pu6Mo5NNHWE6xz2hLUelpzVNBjJQH9ncCXAYPT8HxywgyoaMPFjnDGgVG7i3tEC84MI+9hvTw7GOoYWMCGJP+2tcRc+oB/7OYPAF7t1y7WAl3ybRj8lp8PsIBPpbKiNwyXFeg70mlLwtCVAbU6mk0R/vUeXBIlsqiht7Yw4jrQjGTnLklSfvSuXu/QiEuXAJDvEBU6uSIX3RfR5Sdk0NSbjNQzB1TVLQKXAxXy3aG+Zu2vnG533IMxMe5uKRVnpRTADE6n4w7xsRY5ZK+9QccHv7SQ+joB80BLKze5XqKKzs7f/GR7oPsXA2sRA282aR2ARpffBj3V8QmP/OVlEavK1UBnoHZlIH8WTY="
+  file_glob: true
+  file: "lib/*.so"
+  skip_cleanup: true
+  overwrite: true
+  on:
+      repo: HaiDang2001VN/lmbspecialops
+      all_branches: true
+      tags: true
